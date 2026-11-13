@@ -1,0 +1,204 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import ContactLinks from "../../components/ContactLinks.astro";
+
+export async function getStaticPaths() {
+  const work = await getCollection("work", ({ data }) => !data.draft);
+  return work.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+interface Props {
+  entry: CollectionEntry<"work">;
+}
+
+const { entry } = Astro.props;
+const { title, summary, kind, role, period, stack, highlights, links } = entry.data;
+const { Content, headings } = await render(entry);
+const toc = headings.filter((h) => h.depth === 2);
+---
+
+<Base title={title} description={summary} type="article">
+  <article class="container">
+    <header class="intro">
+      <p class="eyebrow">{kind} · {period}</p>
+      <h1>{title}</h1>
+      <p class="summary">{summary}</p>
+      <p class="muted role">Role: {role}</p>
+      {
+        highlights.length > 0 && (
+          <dl class="stats">
+            {highlights.map((h) => (
+              <div>
+                <dt>{h.label}</dt>
+                <dd>{h.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+      <ul class="tags">{stack.map((s) => <li>{s}</li>)}</ul>
+      {
+        links.length > 0 && (
+          <p class="links">
+            {links.map((l, i) => (
+              <a class:list={["button", { primary: i === 0 }]} href={l.href}>
+                {l.label}
+              </a>
+            ))}
+          </p>
+        )
+      }
+    </header>
+
+    <div class="layout">
+      {
+        toc.length > 2 && (
+          <nav class="toc" aria-label="On this page">
+            <p class="eyebrow">On this page</p>
+            <ol>
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+
+    <footer class="end">
+      <h2>Want to talk about this work?</h2>
+      <ContactLinks />
+      <p><a href="/">← Back to home</a></p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .intro {
+    max-width: 52rem;
+    padding: clamp(2.5rem, 7vw, 4.5rem) 0 1rem;
+  }
+
+  .intro h1 {
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+  }
+
+  .summary {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--muted);
+  }
+
+  .role {
+    font-size: 0.95rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  dt {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.5rem;
+  }
+
+  .layout {
+    display: grid;
+    /* minmax(0, …) so wide code blocks and tables scroll inside their own box instead of widening the page */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .layout {
+      grid-template-columns: 13rem minmax(0, 1fr);
+      align-items: start;
+    }
+    .toc {
+      position: sticky;
+      top: 5.5rem;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .toc {
+      display: none;
+    }
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--border);
+  }
+
+  .toc li {
+    margin: 0;
+  }
+
+  .toc a {
+    display: block;
+    padding: 0.3rem 0 0.3rem 0.9rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+    text-decoration: none;
+    line-height: 1.35;
+  }
+
+  .toc a:hover {
+    color: var(--text);
+  }
+
+  .end {
+    max-width: var(--prose);
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (min-width: 1024px) {
+    .end {
+      margin-left: 15.5rem;
+    }
+  }
+
+  .end h2 {
+    margin-top: 0;
+  }
+
+  .end p {
+    margin-top: 1.5rem;
+  }
+</style>

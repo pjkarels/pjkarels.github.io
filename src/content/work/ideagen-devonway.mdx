@@ -1,0 +1,201 @@
+---
+title: "Ideagen DevonWay: a native Android app from first commit to 2.6"
+summary: "Founding Android engineer on an enterprise safety and compliance app: server-defined forms, a JNI bridge to a shared C rules engine, offline-first data and submissions that survive the field."
+kind: "Case study"
+role: "Founding Android engineer, then lead contributor"
+period: "Oct 2023 – Nov 2026"
+stack: ["Kotlin", "JNI / C++", "Room", "WorkManager", "Hilt", "Cloud Build", "Firebase Test Lab"]
+highlights:
+  - { value: "44%", label: "of all commits, top contributor" }
+  - { value: "11k", label: "lines of JNI C++" }
+  - { value: "v2.6", label: "shipped from an empty repo" }
+order: 1
+---
+
+import LayerDiagram from "../../components/LayerDiagram.astro";
+
+## Overview
+
+I built the native Android app for **Ideagen DevonWay**, an enterprise safety and compliance (EHSQ) platform. I started from an empty repository in October 2023 and shipped it to field workers through version 2.6. Inspectors, supervisors and technicians use it to fill in complex, configurable inspection forms, often with no connectivity.
+
+Over three years I wrote about 1,070 commits, roughly 44% of the codebase's history, more than any other contributor. I owned the architecture, the bridge into a shared C business-logic library, the offline data layer, background submission and the CI/CD pipeline that builds, signs, scans and publishes the app.
+
+## The product and the challenge
+
+The app had to render forms it had never seen at build time, keep working offline and agree exactly with the iOS and Windows apps on business rules. Customers design their own inspection templates on the server: nested groups, repeating child rows, references to other records, signatures, photos, video, maps, procedures with steps and checklists that cascade.
+
+The main engineering problems were:
+
+- **Shared rules, three platforms.** Form logic such as validation, calculated fields and field dependencies lives in a cross-platform C library. Android had to call it through JNI without leaking memory or racing on a library that is not thread-safe.
+- **Server-defined UI.** Every screen in a form is built at runtime from a template, so the renderer had to support dozens of field types and their combinations.
+- **Offline first.** Workers may be in hangars, plants or remote sites. Templates, assignments and large reference datasets had to be cached on the device and kept fresh.
+- **Submissions that must not be lost.** A completed inspection can carry many photos and attachments. Submission had to survive the app being backgrounded or killed, flaky networks and expiring sessions.
+- **Enterprise release requirements.** Signed builds, code obfuscation, static and dependency security scanning and staged Play Store releases.
+
+<LayerDiagram
+  title="App architecture in four layers"
+  caption="Business rules stay in one C library shared by every client. Android adds the native UI, offline cache and background submission around it."
+  layers={[
+    {
+      label: "Presentation",
+      boxes: [
+        { title: "Dynamic form renderer", detail: "Native views built at runtime from server templates. MVVM with Hilt and Navigation." },
+      ],
+    },
+    {
+      label: "App services",
+      boxes: [
+        { title: "Offline data layer", detail: "Room cache, delta sync, ETags, file storage for large payloads" },
+        { title: "Background submission", detail: "WorkManager with retry, replay logs and resumable uploads" },
+        { title: "Platform API", detail: "Templates, assignments, reference data, submissions", external: true },
+      ],
+    },
+    {
+      label: "Native bridge",
+      boxes: [
+        { title: "JNI layer (~11,000 lines of C++)", detail: "Explicit object lifetimes, a native lock for a non-thread-safe library, callbacks into Kotlin", accent: true },
+      ],
+    },
+    {
+      label: "Shared core",
+      boxes: [
+        { title: "C forms rules engine", detail: "Validation, calculated fields, dependencies" },
+        { title: "iOS and Windows apps", detail: "Same library, same rules", external: true },
+      ],
+    },
+  ]}
+/>
+
+## My role
+
+I was the founding Android engineer and later the lead contributor on a team of several mobile developers. I wrote the first commit, set the architecture and stayed the main owner of the hardest subsystems.
+
+- Designed the app architecture: MVVM with Hilt, Navigation, Room, coroutines and WorkManager.
+- Wrote and maintained the JNI layer between Kotlin and the shared C library.
+- Built most of the dynamic form renderer and its field types.
+- Owned offline caching, sync and background submission.
+- Built the CI/CD pipeline, security scanning and test reporting.
+- Handled production issues: diagnosed field reports from device logs and shipped fixes.
+
+<div class="table-wrap">
+
+| When | Milestone |
+| --- | --- |
+| Late 2026 | Version 2.6; form event pipeline refactor; Android 17 readiness |
+| Mid 2026 | Submission moved to WorkManager with retries; security scanning in CI |
+| Early 2026 | Automated cloud build to Play Store; obfuscation; deep linking |
+| Late 2025 | Background form submission; production monitoring |
+| Mid 2025 | Offline reference data moved to Room with delta sync; observations and ad hoc records |
+| Late 2024 – early 2025 | Attachments, PDF annotation, maps, paginated forms, procedures |
+| 2024 | JNI bridge to the shared C library; core form field types |
+| Oct 2023 | First commit of the new native app |
+
+</div>
+
+## Key projects
+
+### 1. A JNI bridge to a shared C rules engine
+
+**Problem.** All three client apps had to evaluate forms the same way, so business rules lived in one C library. Android needed safe access to it from Kotlin.
+
+**Approach.** I wrote a JNI layer of about 11,000 lines of C++, split by area: templates, elements, fields, navigation, child rows and form links. Native object lifetimes are managed explicitly, so pointers are acquired and released in step with Kotlin objects. The library is not thread-safe, so I serialized access behind a native lock instead of `synchronized`. C callbacks such as record lookups reach back into Kotlin services. I also built the native toolchain into the Gradle build with CMake and kept up with NDK and 16 KB page-size alignment requirements.
+
+**Outcome.** Android runs the same rules as iOS and Windows from a single source, and library updates ship to Android by bumping one reference.
+
+### 2. A renderer for server-defined forms
+
+**Problem.** Forms are designed by each customer, so the app cannot hard-code a single screen.
+
+**Approach.** I built a renderer that walks the form tree from the C library and builds native views for each element. It covers text, numeric, date and time, select and multi-select fields, signatures with ink color memory, map-based geolocation with reverse geocoding, photo, video and file attachments, PDF annotation, QR scanning, reference-record search, repeating child rows, collapsible groups, paginated forms with a table of contents and step-by-step procedures. Each change re-evaluates dependent fields through the rules engine.
+
+**Outcome.** New form designs work on Android without an app release.
+
+### 3. An offline-first data layer
+
+**Problem.** Workers need templates, assignments and large reference datasets on the device before they lose signal. Loading everything on every login was slow and fragile.
+
+**Approach.** I moved the reference data to Room and added a delta sync, so the app downloads only rows that changed since the last sync. Independent fetches run in parallel with coroutines. Template caches are checked with tags and refreshed only when stale, and HTTP ETags avoid re-downloading unchanged data. Large form payloads moved from database columns to file storage. Users see a determinate caching progress bar, and in-flight caching is cancelled cleanly on logout.
+
+**Outcome.** Faster logins and resumes, and the app stays usable offline with large reference datasets.
+
+### 4. Submissions that survive the real world
+
+**Problem.** Completed inspections with many attachments were sometimes interrupted by app backgrounding, process death, session expiry or weak networks.
+
+**Approach.** I moved submission off the UI into a background job, first with a foreground service and then with WorkManager. I added automatic retry, replay logs for interrupted submissions, an identifier so the server will recognize a resumed submission, upload throttling that adapts to conditions and a progress indicator in the notification. I also handled activity and fragment restoration so users do not lose work due to process death.
+
+**Outcome.** Submissions complete even when the user leaves the app, and failures are visible and recoverable instead of silent.
+
+> I later rebuilt these ideas from scratch as an open-source library, [Outpost Sync](/work/outpost-sync/), with a chaos test that proves exactly-once, in-order delivery.
+
+### 5. A release pipeline from commit to Play Store
+
+**Problem.** Builds were assembled and uploaded by hand, and security reviews needed repeatable evidence.
+
+**Approach.** I built a container-based cloud pipeline that lints pull requests, runs unit tests, builds, signs and publishes release bundles. A small Java cloud function I wrote uploads each bundle to the Play Store alpha track. Nightly jobs run sharded UI tests on a device farm, publish aggregated coverage reports and post results to the team chat and email. I added code obfuscation, static and dependency security scans and moved API keys into managed secrets.
+
+**Outcome.** Every merge to a release branch produces a signed, scanned build in the alpha track with no manual steps.
+
+### 6. Diagnosing a failure that had been "fixed" twice
+
+**Problem.** A field supervisor at a large customer couldn't select their work site in an inspection form, and they were missing inspections a colleague could see. Support had closed the ticket as resolved twice, and it came back both times.
+
+**Approach.** I worked from a full device log of a troubleshooting session and traced each symptom on its own instead of assuming one bug. I found four separate causes:
+
+- A server-side visibility setting returned empty results for every site-scoped dataset on that account. The roles that support kept changing were the wrong lever.
+- An app paging bug treated a "send your maximum" sentinel as a page size, so large datasets were silently cut off after the first batch.
+- Even with that bug fixed, delta sync would never send the missing records to devices that already had the truncated cache.
+- Every one of these failures was logged as a success, which is why the ticket was closed twice.
+
+I gave support a concrete account fix and the right on-device reset. Then I shipped app changes:
+
+- A one-time, per-user cache migration that forces a full re-sync on upgrade without deleting cached rows first.
+- Fetch-then-replace instead of clear-then-fetch, so a failed refresh can't leave a user with an empty picker.
+- A failed page now cancels the refresh instead of being saved as complete data.
+- A guard so that switching accounts during a fetch can't write one user's data under another user's identity.
+- Empty results are logged as errors, so the next occurrence can be diagnosed from a single log.
+
+**Outcome.** The customer confirmed the fix, and the app changes merged with unit tests for each one. No similar tickets have been opened since, and this class of failure now shows up in one log instead of taking three tickets to find.
+
+## Technical stack
+
+<div class="table-wrap">
+
+| Area | Tools |
+| --- | --- |
+| Language | Kotlin, C++ (JNI), C, Java, Bash, Python |
+| Architecture | MVVM, Hilt, Jetpack Navigation with Safe Args, coroutines, LiveData |
+| Data and offline | Room, WorkManager, foreground services, file storage, ETag and delta sync |
+| Networking | Ktor, OkHttp, Moshi, kotlinx.serialization, SAML sign-in |
+| Native | NDK, CMake, JNI, 16 KB page-size alignment |
+| Media and device | CameraX, Media3 ExoPlayer, Coil, Google Maps and Location, ZXing QR, a commercial PDF SDK |
+| Observability | New Relic, product analytics SDK, custom event metrics |
+| Testing | JUnit, MockK, Mockito, Robolectric, Espresso, UI Automator, coroutine test, Ktor mock client |
+| CI/CD | Google Cloud Build, Docker, Cloud Functions, Play Developer API, Firebase Test Lab sharding |
+| Security | R8 obfuscation, SAST and SCA scanning, managed secrets |
+| Platform | minSdk 29, targetSdk 37 (Android 17) |
+
+</div>
+
+## Results and impact
+
+The app went from an empty repository to a production release used by enterprise field teams, and it has shipped through version 2.6. The numbers below come from the repository history as of November 2026.
+
+<div class="table-wrap">
+
+| Measure | Value |
+| --- | --- |
+| My commits | About 1,070 of 2,400 (44%), top contributor |
+| My merged pull requests since the move to pull-request reviews | 111 |
+| Kotlin in the app (team total) | About 90,000 lines in 1,400 files |
+| JNI bridge (team total, mostly mine) | About 11,000 lines of C++ |
+| Automated tests (team total) | About 1,700 test cases in 240 test files |
+| Time span | October 2023 to November 2026 |
+
+</div>
+
+Outcomes that numbers don't capture:
+
+- One set of form rules across Android, iOS and Windows.
+- Customers roll out new inspection forms without an Android release.
+- Release builds reach the alpha track with no manual steps, and each one is security-scanned.

@@ -1,0 +1,127 @@
+---
+title: "Outpost Sync: offline-first sync that can't lose data"
+summary: "An open-source Kotlin library that delivers offline edits exactly once and in order, merges concurrent changes field by field, and proves it with a chaos test that kills the process mid-sync."
+kind: "Open source"
+role: "Author"
+period: "2026"
+stack: ["Kotlin", "Coroutines", "Room", "WorkManager", "kotlinx.serialization", "GitHub Actions"]
+highlights:
+  - { value: "2,000", label: "randomized failure histories per soak" }
+  - { value: "Exactly once", label: "verified under lost responses" }
+  - { value: "2", label: "real bugs caught by the chaos test" }
+links:
+  - { label: "Source on GitHub", href: "https://github.com/pjkarels/outpost-sync" }
+  - { label: "Architecture decisions", href: "https://github.com/pjkarels/outpost-sync/tree/main/docs/adr" }
+order: 2
+---
+
+import LayerDiagram from "../../components/LayerDiagram.astro";
+import LifecycleDiagram from "../../components/LifecycleDiagram.astro";
+
+## Why I built it
+
+Most of my career has been spent on apps where losing a user's work is not acceptable: banking, healthcare, and safety inspections filled in at sites with no signal. The hard part of those apps is rarely the UI. It's what happens to a saved change between the tap on **Submit** and the server's confirmation.
+
+My production versions of this code belong to my employers. Outpost Sync is a clean-room, open-source library that solves the same problem in public, so the design and the tests can speak for themselves.
+
+```kotlin
+// When the user saves a form, online or not:
+engine.enqueue("inspection", id, Operation.UPDATE, patch, baseVersion = local.serverVersion)
+OutpostScheduler.requestSync(context)
+```
+
+## What goes wrong with "just retry the POST"
+
+<div class="table-wrap">
+
+| Failure in the field | Naive result | What Outpost does |
+| --- | --- | --- |
+| Request applied, response lost | Retry applies the change twice | Every change carries an **idempotency key**; replays return the original result |
+| Process killed mid-sync | Change stuck in "sending" forever | Claims are **leased**; expired leases are picked up again |
+| Two sync workers overlap | A slow worker overwrites a newer result | Every result is **fenced** by attempt number |
+| Two offline edits to one record | Sent out of order, or conflict with each other | **Per-record FIFO**; queued edits are **re-based** when the first is acknowledged |
+| Someone else edited the record | Last write wins and data is silently lost | **Field-level three-way merge**; real conflicts are **parked** for the user |
+| A fleet of devices reconnects at once | A thundering herd hits the server | Exponential backoff with **jitter**; `Retry-After` honored |
+
+</div>
+
+## Architecture
+
+<LayerDiagram
+  title="Outpost Sync architecture"
+  caption="The engine is plain Kotlin with no Android dependency, so every rule is unit-tested on the JVM. Android supplies durable storage and scheduling."
+  layers={[
+    {
+      label: "Your app",
+      boxes: [
+        { title: "ViewModel / repository", detail: "Writes local tables and calls enqueue() in the same user action" },
+        { title: "SyncListener", detail: "Applies server versions and remote wins back to local tables" },
+      ],
+    },
+    {
+      label: "outpost-core (pure Kotlin)",
+      boxes: [
+        { title: "SyncEngine", detail: "drain(): claim, push, resolve, commit. Bounded parallelism across records.", accent: true },
+        { title: "ConflictResolver", detail: "Server wins, client wins, or field-level merge with parking" },
+        { title: "RetryPolicy", detail: "Exponential backoff, jitter, Retry-After" },
+      ],
+    },
+    {
+      label: "outpost-android",
+      boxes: [
+        { title: "RoomOutboxStore", detail: "Head-of-line claims, leases and fencing enforced in SQL transactions" },
+        { title: "OutpostSyncWorker", detail: "WorkManager, network-constrained, with separate immediate and retry chains" },
+      ],
+    },
+    {
+      label: "Your backend",
+      boxes: [
+        { title: "SyncTransport → API", detail: "Idempotency keys, optimistic concurrency (409), changed-fields report", external: true },
+      ],
+    },
+  ]}
+/>
+
+<LifecycleDiagram />
+
+## Proving it: a chaos test
+
+Unit tests check each rule on its own. To show that the rules hold together, I wrote a randomized end-to-end test. A simulated user edits records offline while the network:
+
+- drops requests before they reach the server;
+- loses responses *after* the server applied the change;
+- returns 503s, some with `Retry-After`.
+
+At the same time, other users edit the same records on the server, and the app process is killed in the middle of syncing.
+
+When everything goes quiet, the test asserts four properties:
+
+1. **Nothing is stuck.** The outbox drains completely, with nothing parked or failed.
+2. **Exactly once.** No change was applied to the server twice, despite replays.
+3. **In order.** The server applied each record's edits in the order the user made them.
+4. **Convergence.** The server matches the device, and other users' edits survive.
+
+Each random seed is a reproducible history. CI runs 80 histories on every push and a 2,000-history soak every night.
+
+## What the chaos test caught
+
+The test found two real bugs while I was building the library, both of the kind that only show up in the field:
+
+**A user conflicting with themselves.** A user edits field `a`, then field `b`, while offline. Both edits are made against server version 5. The first is accepted, so the server moves to 6. The second still claims base 5, so the server rejects it as a conflict, and the reported change is the user's *own* edit. The fix re-bases queued edits to the new version in the same database transaction that records the acknowledgement. The server moved from 5 to 6 only by applying a change the device already had, so this is exact, not a guess.
+
+**A sync loop that would drain the battery.** The "when should I wake up next?" query included edits waiting behind earlier ones, whose retry times were already in the past. On a phone, WorkManager would have been rescheduled immediately, forever. The query now looks only at the front of each record's queue, and a regression test pins it down.
+
+## Design decisions
+
+Each trade-off is written up as an architecture decision record in the repository:
+
+- **[Per-record FIFO outbox](https://github.com/pjkarels/outpost-sync/blob/main/docs/adr/0001-per-entity-fifo-outbox.md)**: why changes are ordered per record rather than globally, and why a rejected change doesn't block its record but a parked conflict does.
+- **[Leases and fencing instead of locks](https://github.com/pjkarels/outpost-sync/blob/main/docs/adr/0002-leases-and-fencing.md)**: how the library survives process death and overlapping workers without a recovery step at startup.
+- **[Field-level merge and follower re-basing](https://github.com/pjkarels/outpost-sync/blob/main/docs/adr/0003-field-level-merge-and-rebasing.md)**: three-way merge on patches, and rebasing a stack of queued edits.
+
+## What's next
+
+- A Ktor sample server and a Compose demo app: an offline inspection form.
+- Coalescing consecutive edits to the same record before sending them.
+- Kotlin Multiplatform support with an iOS store. The core is already platform-free.
+- Publishing to Maven Central.

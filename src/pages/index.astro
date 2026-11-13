@@ -1,0 +1,287 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import WorkCard from "../components/WorkCard.astro";
+import ContactLinks from "../components/ContactLinks.astro";
+import { site } from "../site.config";
+
+const work = (await getCollection("work", ({ data }) => !data.draft)).sort((a, b) => a.data.order - b.data.order);
+
+const strengths = [
+  {
+    title: "Offline-first sync",
+    body: "Room caches, delta sync, WorkManager submission with retry and replay. Built for inspectors working in hangars, plants and remote sites with no signal.",
+  },
+  {
+    title: "Native code integration",
+    body: "An ~11,000-line JNI bridge to a shared C rules engine, so Android, iOS and Windows evaluate forms from one source of truth.",
+  },
+  {
+    title: "Release engineering and security",
+    body: "Pipelines from commit to Play Store: Cloud Build, sharded device-farm tests, static and dependency scanning, R8 and managed secrets.",
+  },
+  {
+    title: "Production debugging",
+    body: "Diagnosing field failures from device logs and memory profiles. Leak and performance work took one banking app from under 4.0 to 4.5 stars.",
+  },
+];
+
+const experience = [
+  {
+    company: "Ideagen",
+    title: "Senior Software Engineer (Mobile Lead)",
+    period: "2023 – present",
+    points: [
+      "Founding Android engineer for Ideagen DevonWay, an EHSQ platform used in regulated industries. Built the native app from an empty repository through release 2.6.",
+      "Owns the architecture, the JNI bridge to the shared C forms engine, offline sync, background submission and the CI/CD pipeline.",
+      "Mentors developers and reviews code; set the team's architecture guidelines.",
+    ],
+    link: { href: "/work/ideagen-devonway/", label: "Read the case study" },
+  },
+  {
+    company: "Nerdery",
+    title: "Senior Software Engineer (Mobile Consultant)",
+    period: "2018 – 2023",
+    points: [
+      "National financial services firm: modernized a banking app and raised its Play Store rating from under 4.0 to a stable 4.5 through performance and memory-leak work. Shipped secure biometric sign-in and a loyalty program.",
+      "Regional medical provider: co-designed a referral-processing app for clinicians and set up its first CI/CD pipeline.",
+      "Materials testing firm: a UWP desktop app using SignalR for real-time, two-way communication with lab hardware.",
+    ],
+  },
+  {
+    company: "Magenic Technologies",
+    title: "Consultant and Technical Instructor",
+    period: "2010 – 2018",
+    points: [
+      "Native Android modules for live quotes and high-volume options trading at a national investment firm.",
+      "Rewrote a PhoneGap hybrid banking app as a native Android app, with much faster transactions.",
+      "Redesigned an insurer's claims submission flow, and built an offline-capable Xamarin sales app synced through Azure.",
+      "Taught internal training seminars for mid-level and senior developers.",
+    ],
+  },
+];
+---
+
+<Base>
+  <section class="hero container">
+    <p class="eyebrow">{site.name} · {site.headline}</p>
+    <h1>Native Android that keeps working when the network doesn't.</h1>
+    <p class="lede">{site.pitch}</p>
+    <div class="cta">
+      <a class="button primary" href="#work">See my work</a>
+      <a class="button" href={site.resume}>Download résumé</a>
+    </div>
+  </section>
+
+  <section id="work" class="container section" aria-labelledby="work-title">
+    <h2 id="work-title">Selected work</h2>
+    <div class="grid two">
+      {work.map((entry) => <WorkCard entry={entry} />)}
+    </div>
+  </section>
+
+  <section class="container section" aria-labelledby="strengths-title">
+    <h2 id="strengths-title">What I bring</h2>
+    <div class="grid four">
+      {
+        strengths.map((s) => (
+          <div class="strength">
+            <h3>{s.title}</h3>
+            <p>{s.body}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section id="experience" class="container section" aria-labelledby="experience-title">
+    <h2 id="experience-title">Experience</h2>
+    <ol class="timeline">
+      {
+        experience.map((job) => (
+          <li>
+            <div class="when">{job.period}</div>
+            <div class="what">
+              <h3>
+                {job.company} <span class="muted">· {job.title}</span>
+              </h3>
+              <ul>
+                {job.points.map((p) => (
+                  <li>{p}</li>
+                ))}
+              </ul>
+              {job.link && <a href={job.link.href}>{job.link.label} →</a>}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="creds">
+      <div>
+        <h3>Education</h3>
+        <p>B.S. Computer Science, North Dakota State University</p>
+      </div>
+      <div>
+        <h3>Certification</h3>
+        <p>Google Cloud Certified: Associate Cloud Engineer</p>
+      </div>
+      <div>
+        <h3>Core stack</h3>
+        <p>Kotlin, Java, Jetpack Compose, coroutines and Flow, Hilt, Room, WorkManager, NDK/JNI, C++, GCP, Docker</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="container section" aria-labelledby="contact-title">
+    <div class="contact-panel">
+      <h2 id="contact-title">Let's talk</h2>
+      <p>
+        I'm looking for senior and staff individual-contributor roles on Android and mobile platform teams, especially
+        where offline reliability, native integration or security matter.
+      </p>
+      <ContactLinks />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding-top: clamp(3rem, 9vw, 6.5rem);
+    padding-bottom: 1rem;
+  }
+
+  .hero h1 {
+    max-width: 18ch;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+  }
+
+  .lede {
+    max-width: 40rem;
+    font-size: clamp(1.1rem, 2vw, 1.25rem);
+    color: var(--muted);
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .section {
+    padding-top: 2rem;
+  }
+
+  .grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .grid.two {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  }
+
+  .grid.four {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .strength {
+    padding: 1.25rem;
+    border-top: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .strength h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+  }
+
+  .strength p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .timeline > li {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .timeline > li {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+
+  .when {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--muted);
+    padding-top: 0.2rem;
+  }
+
+  .what h3 {
+    margin: 0 0 0.6rem;
+  }
+
+  .what h3 span {
+    font-weight: 500;
+    font-size: 1rem;
+  }
+
+  .what ul {
+    padding-left: 1.1rem;
+  }
+
+  .what li {
+    margin-bottom: 0.35rem;
+  }
+
+  .what li::marker {
+    color: var(--accent);
+  }
+
+  .creds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .creds h3 {
+    margin: 0 0 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .creds p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .contact-panel {
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+  }
+
+  .contact-panel h2 {
+    margin-top: 0;
+  }
+
+  .contact-panel p {
+    max-width: 40rem;
+  }
+</style>
