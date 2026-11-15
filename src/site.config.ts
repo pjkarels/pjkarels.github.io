@@ -8,7 +8,7 @@ export const site = {
     "I design and build native Android apps for banking, healthcare and safety inspection: offline-first sync, native code integration and secure release pipelines for regulated industries.",
   email: "paul.j.karels@gmail.com",
   github: "pjkarels",
-  linkedin: "", // e.g. "https://www.linkedin.com/in/your-profile"
+  linkedin: "www.linkedin.com/in/paul-karels-232163b",
   resume: "/Paul_Karels_Resume.pdf",
 } as const;
 

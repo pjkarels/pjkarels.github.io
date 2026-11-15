@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1311"/>
+      <stop offset="1" stop-color="#123a2d"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#4fd1a5" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Left: label + text -->
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <rect x="80" y="120" width="250" height="40" rx="20" fill="#173229" stroke="#4fd1a5" stroke-opacity="0.5"/>
+    <text x="205" y="147" text-anchor="middle" font-size="18" font-weight="700" letter-spacing="2" fill="#4fd1a5">EHSQ · ANDROID</text>
+    <text x="80" y="240" font-size="58" font-weight="800" fill="#e8ece9">Safety inspections</text>
+    <text x="80" y="310" font-size="58" font-weight="800" fill="#e8ece9">that work <tspan fill="#4fd1a5">offline</tspan></text>
+    <text x="80" y="370" font-size="24" fill="#9aa49f">Server-defined forms · shared C rules engine</text>
+    <text x="80" y="404" font-size="24" fill="#9aa49f">Background submission that survives the field</text>
+
+    <!-- icon row: hard hat, shield, leaf (E/H/S/Q cues) -->
+    <g transform="translate(80 460)" fill="none" stroke="#4fd1a5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- hard hat -->
+      <g>
+        <rect width="72" height="72" rx="16" fill="#173229" stroke="none"/>
+        <path d="M16 48h40M20 48v-6a16 16 0 0 1 32 0v6M30 28v10M42 28v10"/>
+      </g>
+      <!-- shield check -->
+      <g transform="translate(92 0)">
+        <rect width="72" height="72" rx="16" fill="#173229" stroke="none"/>
+        <path d="M36 14l18 7v13c0 12-8 20-18 24-10-4-18-12-18-24V21z"/>
+        <path d="M28 36l6 6 11-12"/>
+      </g>
+      <!-- leaf -->
+      <g transform="translate(184 0)">
+        <rect width="72" height="72" rx="16" fill="#173229" stroke="none"/>
+        <path d="M20 54c0-22 14-34 34-36 0 22-12 34-34 36z"/>
+        <path d="M20 54l18-18"/>
+      </g>
+      <!-- quality badge -->
+      <g transform="translate(276 0)">
+        <rect width="72" height="72" rx="16" fill="#173229" stroke="none"/>
+        <circle cx="36" cy="32" r="13"/>
+        <path d="M28 43l-4 15 12-6 12 6-4-15"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right: phone with inspection form -->
+  <g transform="translate(790 60)" filter="url(#shadow)">
+    <rect width="300" height="560" rx="40" fill="#1b211e" stroke="#2a332e" stroke-width="3"/>
+    <rect x="14" y="14" width="272" height="532" rx="28" fill="#fbfbf9"/>
+    <rect x="120" y="24" width="60" height="8" rx="4" fill="#1b211e"/>
+  </g>
+  <g transform="translate(804 74)" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <!-- app bar -->
+    <path d="M28 0h216a28 28 0 0 1 28 28v42H0V28A28 28 0 0 1 28 0z" fill="#0b7a5a"/>
+    <text x="20" y="56" font-size="17" font-weight="700" fill="#fff">Site inspection</text>
+    <!-- offline pill -->
+    <rect x="180" y="40" width="80" height="22" rx="11" fill="#ffffff" fill-opacity="0.18"/>
+    <circle cx="194" cy="51" r="4" fill="#f5b942"/>
+    <text x="203" y="56" font-size="12" font-weight="700" fill="#fff">Offline</text>
+
+    <!-- checklist -->
+    <g font-size="14" fill="#1b1f1d">
+      <g transform="translate(18 92)">
+        <rect width="22" height="22" rx="5" fill="#0b7a5a"/>
+        <path d="M6 11l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="34" y="16">PPE worn by all crew</text>
+      </g>
+      <g transform="translate(18 128)">
+        <rect width="22" height="22" rx="5" fill="#0b7a5a"/>
+        <path d="M6 11l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="34" y="16">Lockout / tagout applied</text>
+      </g>
+      <g transform="translate(18 164)">
+        <rect width="22" height="22" rx="5" fill="none" stroke="#b9c0bb" stroke-width="2"/>
+        <text x="34" y="16">Spill kit inspected</text>
+      </g>
+    </g>
+
+    <!-- select field -->
+    <text x="18" y="216" font-size="11" font-weight="700" fill="#5b625e" letter-spacing="1">WORK SITE</text>
+    <rect x="18" y="224" width="236" height="38" rx="8" fill="#fff" stroke="#e1e4df" stroke-width="2"/>
+    <text x="30" y="248" font-size="14" fill="#1b1f1d">Hangar 3 · North apron</text>
+    <path d="M232 240l6 6 6-6" fill="none" stroke="#5b625e" stroke-width="2"/>
+
+    <!-- photo attachments -->
+    <text x="18" y="290" font-size="11" font-weight="700" fill="#5b625e" letter-spacing="1">PHOTOS</text>
+    <g transform="translate(18 298)">
+      <rect width="70" height="56" rx="8" fill="#cfe7dd"/>
+      <path d="M8 46l18-20 14 14 8-8 14 14z" fill="#0b7a5a" fill-opacity="0.55"/>
+      <circle cx="52" cy="16" r="6" fill="#f5b942"/>
+    </g>
+    <g transform="translate(96 298)">
+      <rect width="70" height="56" rx="8" fill="#d9e2ea"/>
+      <path d="M8 46l14-16 12 12 10-10 18 14z" fill="#3a5a78" fill-opacity="0.5"/>
+    </g>
+    <g transform="translate(174 298)">
+      <rect width="70" height="56" rx="8" fill="none" stroke="#b9c0bb" stroke-width="2" stroke-dasharray="5 4"/>
+      <path d="M35 18v20M25 28h20" stroke="#5b625e" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- signature -->
+    <text x="18" y="384" font-size="11" font-weight="700" fill="#5b625e" letter-spacing="1">SIGNATURE</text>
+    <path d="M26 424c10-22 18-24 20-8s8 10 16-6 12-8 14 4 12 4 22-10c6-6 10 2 16 6" fill="none" stroke="#1b3a8a" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="18" y1="434" x2="254" y2="434" stroke="#e1e4df" stroke-width="2"/>
+
+    <!-- submit button + queued -->
+    <rect x="18" y="452" width="236" height="44" rx="10" fill="#0b7a5a"/>
+    <text x="136" y="480" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">Submit · queued, 6 files</text>
+  </g>
+
+  <!-- sync arrows badge -->
+  <g transform="translate(1050 470)">
+    <circle r="42" fill="#4fd1a5"/>
+    <g fill="none" stroke="#0b1410" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-18 -4a19 19 0 0 1 32-11"/>
+      <path d="M16 -24v10h-10"/>
+      <path d="M18 4a19 19 0 0 1 -32 11"/>
+      <path d="M-16 24v-10h10"/>
+    </g>
+  </g>
+</svg>

@@ -5,10 +5,13 @@ interface Props {
   entry: CollectionEntry<"work">;
 }
 const { entry } = Astro.props;
-const { title, summary, kind, role, period, stack, highlights } = entry.data;
+const { title, summary, kind, role, period, stack, highlights, image } = entry.data;
 ---
 
 <article class="card">
+  <div class:list={["inner", { "has-image": image }]}>
+  {image && <img class="thumb" src={image.src} alt={image.alt} width="1200" height="630" loading="lazy" decoding="async" />}
+  <div class="body">
   <p class="eyebrow">{kind} · {period}</p>
   <h3><a href={`/work/${entry.id}/`}>{title}</a></h3>
   <p class="role muted">{role}</p>
@@ -26,20 +29,57 @@ const { title, summary, kind, role, period, stack, highlights } = entry.data;
     )
   }
   <ul class="tags">{stack.slice(0, 6).map((s) => <li>{s}</li>)}</ul>
+  </div>
+  </div>
 </article>
 
 <style>
   .card {
     position: relative;
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
     padding: 1.5rem;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     transition: border-color 0.15s ease;
+    container-type: inline-size;
+  }
+
+  .inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .thumb {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem;
+    border-radius: calc(var(--radius) - 4px);
+    border: 1px solid var(--border);
+  }
+
+  /* A card that spans the full row puts the image beside the text */
+  @container (min-width: 48rem) {
+    .inner.has-image {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      gap: 2rem;
+      align-items: center;
+    }
+    .has-image .thumb {
+      order: 2;
+      margin-bottom: 0;
+    }
   }
 
   .card:hover,

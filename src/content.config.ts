@@ -14,6 +14,8 @@ const work = defineCollection({
     stack: z.array(z.string()),
     /** Headline numbers shown at the top of the page and on the card. */
     highlights: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    /** Card thumbnail and social preview image: a path under public/, ideally 1200×630. */
+    image: z.object({ src: z.string(), alt: z.string() }).optional(),
     links: z.array(z.object({ label: z.string(), href: z.string() })).default([]),
     order: z.number(),
     draft: z.boolean().default(false),

@@ -13,12 +13,12 @@ interface Props {
 }
 
 const { entry } = Astro.props;
-const { title, summary, kind, role, period, stack, highlights, links } = entry.data;
+const { title, summary, kind, role, period, stack, highlights, links, image } = entry.data;
 const { Content, headings } = await render(entry);
 const toc = headings.filter((h) => h.depth === 2);
 ---
 
-<Base title={title} description={summary} type="article">
+<Base title={title} description={summary} type="article" image={image}>
   <article class="container">
     <header class="intro">
       <p class="eyebrow">{kind} · {period}</p>
